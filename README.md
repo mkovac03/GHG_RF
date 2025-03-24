@@ -80,7 +80,6 @@ pip install numpy pandas matplotlib scikit-learn shap
 ---
 
 ## 📊 Example Visuals
-## 📊 Example Visuals
 
 ### GHG Flux Time Series
 ![GHG Flux Time Series](ghg_fluxes.png)
