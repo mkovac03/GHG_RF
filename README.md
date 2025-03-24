@@ -93,6 +93,9 @@ This approach is especially valuable when modeling ecosystem processes that are 
 ### GHG Flux Time Series
 ![GHG Flux Time Series](outputs/plots/environmental_variables.png)
 
+### Gap-filling using Random Forest
+![RF Gap-filled Time Series](outputs/plots/imputed_ghg_flux_timeseries.png)
+
 ### Random Forest Tree
 ![Prediction Tree Plot](outputs/plots/random_forest_single_tree.png)
 
