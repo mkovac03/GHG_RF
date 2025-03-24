@@ -80,11 +80,33 @@ pip install numpy pandas matplotlib scikit-learn shap
 ---
 
 ## 📊 Example Visuals
-- Environmental variable seasonality plots
+## 📊 Example Visuals
+
+### GHG Flux Time Series
+![GHG Flux Time Series](ghg_fluxes.png)
+
+### SHAP Force Plots
+![SHAP Force Plot 1](shap_forceplot_1.png)
+![SHAP Force Plot 2](shap_forceplot_2.png)
+
+### Random Forest Tree
+![Prediction Tree Plot](rf_tree.png)
+
+### SHAP Heatmap
+![SHAP Heatmap](shap_heatmap.png)
+
+### SHAP Waterfall Plot
+![SHAP Waterfall Plot](shap_waterfall.png)
+
 - SHAP summary and force plots
+![SHAP Force Plot 1](shap_forceplot_1.png)
+![SHAP Force Plot 2](shap_forceplot_2.png)
 - GHG flux prediction vs true values with error bars
+![Prediction Tree Plot](rf_tree.png)
 - Cross-correlation subplots with optimal lags
+![SHAP Heatmap](shap_heatmap.png)
 - Lag-adjusted variable time series
+![SHAP Waterfall Plot](shap_waterfall.png)
 
 ---
 
