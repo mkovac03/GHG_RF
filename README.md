@@ -50,7 +50,7 @@ pip install numpy pandas matplotlib scikit-learn shap
 - GHG flux computed as a weighted, noisy function of these variables
 
 ### 🔹 Missing Data & Imputation
-- 20% of GHG flux values are removed randomly
+- 10% of GHG flux values are removed randomly
 - Random Forest trained on complete data to impute missing values
 - Imputed values are validated using:
   - MAE, RMSE, R²
