@@ -51,7 +51,7 @@ pip install numpy pandas matplotlib scikit-learn shap
 
 ### 🔹 Missing Data & Imputation
 - 10% of GHG flux values are removed randomly
-- Random Forest trained on complete data to impute missing values
+- Random Forest trained on environmental data to impute missing values
 - Imputed values are validated using:
   - MAE, RMSE, R²
   - Scatter plot with RMSE error bars
