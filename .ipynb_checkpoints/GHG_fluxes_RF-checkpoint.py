@@ -6,13 +6,6 @@ from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
 import matplotlib.pyplot as plt
 np.random.seed(42)
 
-import os
-
-# Create output directory
-os.makedirs("outputs/plots", exist_ok=True)
-os.makedirs("outputs/shap_waterfall_plots", exist_ok=True)
-os.makedirs("outputs/html", exist_ok=True)
-
 days = np.arange(1000)
 # Create modified seasonality for each variable
 seasonality_base = np.sin(2 * np.pi * days / 365)
@@ -54,10 +47,6 @@ data = pd.DataFrame({
 })
 data = pd.get_dummies(data, columns=['land_cover'], drop_first=True)
 
-# Save the dataset as a CSV file
-csv_output_path = "data.csv"
-data.to_csv(csv_output_path, index=False)
-
 # Multi-panel plot with varied seasonality and noise
 fig, axs = plt.subplots(5, 1, figsize=(10, 8), sharex=True)
 
@@ -79,7 +68,6 @@ axs[4].set_xlabel("Date")
 
 plt.suptitle("Environmental Variables with Varied Seasonality and Noise", fontsize=12)
 plt.tight_layout(rect=[0, 0, 1, 0.97])
-plt.savefig("outputs/plots/environmental_variables.png", dpi=300)
 plt.show()
 
 # Introduce missing values ONLY in GHG_flux
@@ -132,7 +120,6 @@ plt.ylabel("GHG Flux")
 plt.title("GHG Flux Time Series with RF-Imputed Gaps and RMSE Error Bars")
 plt.legend()
 plt.tight_layout()
-plt.savefig("outputs/plots/imputed_ghg_flux_timeseries.png", dpi=300)
 plt.show()
 
 # Evaluate prediction accuracy on the dropped (previously missing) values
@@ -168,7 +155,6 @@ metrics_text = f"MAE = {mae:.2f}\nRMSE = {rmse:.2f}\nR² = {r2:.2f}"
 plt.annotate(metrics_text, xy=(0.05, 0.95), xycoords='axes fraction',
              fontsize=10, verticalalignment='top', bbox=dict(boxstyle="round", fc="w", ec="1"))
 plt.tight_layout()
-plt.savefig("outputs/plots/imputation_validation.png", dpi=300)
 plt.show()
 
 # Define features and target
@@ -237,7 +223,6 @@ plt.ylabel("Predicted GHG Flux (Mean of Trees)")
 plt.title("Prediction Uncertainty from Random Forest Ensemble (Tree-Level Std Dev)")
 plt.legend()
 plt.tight_layout()
-plt.savefig("outputs/plots/prediction_uncertainty_rf.png", dpi=300)
 plt.show()
 
 from sklearn.tree import plot_tree
@@ -248,7 +233,6 @@ single_tree_from_rf = rf_best.estimators_[0]  # Take the first tree from the tra
 plt.figure(figsize=(12, 8))
 plot_tree(single_tree_from_rf, feature_names=X.columns, filled=True, rounded=True)
 plt.title("Single Decision Tree Extracted from Random Forest Model")
-plt.savefig("outputs/plots/random_forest_single_tree.png", dpi=300)
 plt.show()
 
 import shap
@@ -257,16 +241,11 @@ import shap
 explainer = shap.TreeExplainer(rf_best)
 shap_values = explainer.shap_values(X_test)
 
-shap.summary_plot(shap_values, X_test, plot_type="bar", show=False)
-plt.tight_layout()
-plt.savefig("outputs/plots/shap_summary_bar.png", dpi=300)
-plt.show()
+# Bar plot for global feature importance
+shap.summary_plot(shap_values, X_test, plot_type="bar")
 
 # examining nonlinear effects or interactions of one feature. Color = another feature that's most correlated (interaction).
-shap.dependence_plot('soil_temp', shap_values, X_test, show=False)
-plt.tight_layout()
-plt.savefig("outputs/plots/shap_dependence_soil_temp.png", dpi=300)
-plt.show()
+shap.dependence_plot('soil_temp', shap_values, X_test)
 
 # Force plot. See https://shap.readthedocs.io/en/latest/example_notebooks/tabular_examples/tree_based_models/Force%20Plot%20Colors.html
 
@@ -276,11 +255,11 @@ shap.force_plot(explainer.expected_value, shap_values, X_test)
 # Generate the interactive SHAP force plot for the full test set
 force_plot = shap.force_plot(explainer.expected_value, shap_values, X_test)
 # Save to HTML
-shap.save_html("outputs/html/shap_force_plot_full.html", force_plot)
+shap.save_html("shap_force_plot_full.html", force_plot)
 
 # Save force plot to standalone HTML file
 plot = shap.force_plot(explainer.expected_value, shap_values[0], X_test.iloc[0])
-shap.save_html("outputs/html/shap_force_plot_sample.html", plot)
+shap.save_html("shap_force_plot_sample.html", plot)
 
 shap_heatmap = shap.Explanation(
     values=shap_values,
@@ -289,11 +268,7 @@ shap_heatmap = shap.Explanation(
     feature_names=X_test.columns
 )
 
-# SHAP heatmap
-shap.plots.heatmap(shap_heatmap, show=False)
-plt.tight_layout()
-plt.savefig("outputs/plots/shap_heatmap.png", dpi=300)
-plt.show()
+shap.plots.heatmap(shap_heatmap)
 
 i = 0  # or any index between 0 and len(X_test) - 1
 
@@ -303,25 +278,25 @@ shap.waterfall_plot(shap.Explanation(
     data=X_test.iloc[i]
 ))
 
-# To generate SHAP waterfall plots for all test samples
-import os
-# Create directory to save plots
-os.makedirs("shap_waterfall_plots", exist_ok=True)
+# # To generate SHAP waterfall plots for all test samples
+# import os
+# # Create directory to save plots
+# os.makedirs("shap_waterfall_plots", exist_ok=True)
 
-# Loop through all test instances
-for i in range(len(X_test)):
-    shap_instance = shap.Explanation(
-        values=shap_values[i],
-        base_values=explainer.expected_value,
-        data=X_test.iloc[i],
-        feature_names=X_test.columns
-    )
+# # Loop through all test instances
+# for i in range(len(X_test)):
+#     shap_instance = shap.Explanation(
+#         values=shap_values[i],
+#         base_values=explainer.expected_value,
+#         data=X_test.iloc[i],
+#         feature_names=X_test.columns
+#     )
 
-    # Create and save plot
-    plt.figure()
-    shap.plots.waterfall(shap_instance, show=False)
-    plt.savefig(f"outputs/shap_waterfall_plots/shap_waterfall_{i}.png", bbox_inches='tight')
-    plt.close()
+#     # Create and save plot
+#     plt.figure()
+#     shap.plots.waterfall(shap_instance, show=False)
+#     plt.savefig(f"shap_waterfall_plots/shap_waterfall_{i}.png", bbox_inches='tight')
+#     plt.close()/
 
 # Wrap shap_values into an Explanation object
 shap_exp = shap.Explanation(
@@ -331,11 +306,8 @@ shap_exp = shap.Explanation(
     feature_names=X_test.columns
 )
 
-# SHAP beeswarm
-shap.plots.beeswarm(shap_exp, show=False)
-plt.tight_layout()
-plt.savefig("outputs/plots/shap_beeswarm.png", dpi=300)
-plt.show()
+# Now plot the beeswarm
+shap.plots.beeswarm(shap_exp)
 
 from scipy.signal import correlate
 from scipy.stats import zscore
@@ -372,7 +344,6 @@ for i, feature in enumerate(predictor_cols_ccf):
 axs[-1].set_xlabel("Lag (days)")
 plt.suptitle("Cross-Correlation with GHG Flux", fontsize=14)
 plt.tight_layout(rect=[0, 0, 1, 0.96])
-plt.savefig("outputs/plots/cross_correlation_lags.png", dpi=300)
 plt.show()
 
 # Display results as DataFrame
@@ -390,7 +361,6 @@ plt.xticks(range(len(corr_matrix.columns)), corr_matrix.columns, rotation=90)
 plt.yticks(range(len(corr_matrix.index)), corr_matrix.index)
 plt.title("Correlation Matrix with Predictors")
 plt.tight_layout()
-plt.savefig("outputs/plots/corr_matrix.png", dpi=300)
 plt.show()
 
 # Create a new DataFrame for lagged predictors using the optimal lags
@@ -413,10 +383,6 @@ lagged_data = lagged_data.drop(columns=features_to_drop)
 # Drop any rows with NaNs from shifting
 lagged_data = lagged_data.dropna().reset_index(drop=True)
 
-# Save the final lagged dataset as CSV
-csv_output_path = "lagged_data.csv"
-lagged_data.to_csv(csv_output_path, index=False)
-
 # Compute correlation matrix including GHG_flux and lagged predictors
 corr_matrix = lagged_data.corr(numeric_only=True)
 
@@ -428,7 +394,6 @@ plt.xticks(range(len(corr_matrix.columns)), corr_matrix.columns, rotation=90)
 plt.yticks(range(len(corr_matrix.index)), corr_matrix.index)
 plt.title("Correlation Matrix with Lagged Predictors")
 plt.tight_layout()
-plt.savefig("outputs/plots/lagged_corr_matrix.png", dpi=300)
 plt.show()
 
 # Filter out any land cover columns in addition to GHG_flux and date
@@ -445,6 +410,5 @@ for i, col in enumerate(columns_to_plot):
 axs[-1].set_xlabel("Date")
 plt.suptitle("Lagged Environmental Variables", fontsize=14)
 plt.tight_layout(rect=[0, 0, 1, 0.96])
-plt.savefig("outputs/plots/lagged_time_series.png", dpi=300)
 plt.show()
 
