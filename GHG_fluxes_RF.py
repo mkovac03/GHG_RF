@@ -6,7 +6,6 @@ from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
 import matplotlib.pyplot as plt
 np.random.seed(42)
 
-# Generate synthetic seasonal data for 1000 time steps (e.g., daily observations for ~3 years)
 days = np.arange(1000)
 # Create modified seasonality for each variable
 seasonality_base = np.sin(2 * np.pi * days / 365)
@@ -19,43 +18,120 @@ seasonality_amplified = 3.3 * seasonality_base              # Increased amplitud
 soil_temp = 10 + 12 * seasonality_base + np.random.normal(0, 4, 1000)
 soil_moisture = 30 + 8 * seasonality_damp + np.random.normal(0, 6, 1000)
 NDVI = 0.6 + 0.3 * seasonality_shifted + np.random.normal(0, 0.1, 1000)
-air_temp = 15 + 18 * seasonality_lagged + np.random.normal(0, 10, 1000)
+air_temp = 15 + 18 * seasonality_lagged + np.random.normal(0, 6, 1000)
 precipitation = 50 + 35 * seasonality_amplified + np.random.normal(0, 20, 1000)
 land_cover = np.random.choice([1, 2, 3, 4], 1000)
 
-# Update DataFrame
-variable_df = pd.DataFrame({
+GHG_flux = (
+    5 + 0.5 * soil_temp
+    - 0.3 * soil_moisture
+    + 10 * NDVI
+    + 0.2 * air_temp
+    + 0.1 * precipitation
+    + np.random.normal(0, 1, 1000)
+)
+
+# Generate datetime index
+start_date = pd.to_datetime("2020-01-01")
+dates = pd.date_range(start=start_date, periods=1000, freq='D')
+
+data = pd.DataFrame({
     'date': dates,
-    'Soil Temperature (°C)': soil_temp,
-    'Soil Moisture (%)': soil_moisture,
+    'soil_temp': soil_temp,
+    'soil_moisture': soil_moisture,
     'NDVI': NDVI,
-    'Air Temperature (°C)': air_temp,
-    'Precipitation (mm)': precipitation,
-    'Land Cover Type': land_cover
+    'air_temp': air_temp,
+    'precipitation': precipitation,
+    'land_cover': land_cover,
+    'GHG_flux': GHG_flux
 })
+data = pd.get_dummies(data, columns=['land_cover'], drop_first=True)
 
 # Multi-panel plot with varied seasonality and noise
-fig, axs = plt.subplots(5, 1, figsize=(14, 10), sharex=True)
+fig, axs = plt.subplots(5, 1, figsize=(10, 8), sharex=True)
 
-axs[0].plot(variable_df['date'], variable_df['Soil Temperature (°C)'], color='red')
+axs[0].plot(data['date'], data['soil_temp'], color='red')
 axs[0].set_ylabel("Soil Temp (°C)")
 
-axs[1].plot(variable_df['date'], variable_df['Soil Moisture (%)'], color='green')
+axs[1].plot(data['date'], data['soil_moisture'], color='green')
 axs[1].set_ylabel("Soil Moisture (%)")
 
-axs[2].plot(variable_df['date'], variable_df['NDVI'], color='darkgreen')
+axs[2].plot(data['date'], data['NDVI'], color='darkgreen')
 axs[2].set_ylabel("NDVI")
 
-axs[3].plot(variable_df['date'], variable_df['Air Temperature (°C)'], color='blue')
+axs[3].plot(data['date'], data['air_temp'], color='blue')
 axs[3].set_ylabel("Air Temp (°C)")
 
-axs[4].plot(variable_df['date'], variable_df['Precipitation (mm)'], color='purple')
+axs[4].plot(data['date'], data['precipitation'], color='purple')
 axs[4].set_ylabel("Precip. (mm)")
 axs[4].set_xlabel("Date")
 
-plt.suptitle("Environmental Variables with Varied Seasonality and Noise", fontsize=14)
+plt.suptitle("Environmental Variables with Varied Seasonality and Noise", fontsize=12)
 plt.tight_layout(rect=[0, 0, 1, 0.97])
 plt.show()
+
+# Introduce missing values ONLY in GHG_flux
+missing_indices_y = np.random.choice(data.index, size=int(0.1 * len(data)), replace=False)
+data['GHG_flux_missing'] = data['GHG_flux'].copy()
+data.loc[missing_indices_y, 'GHG_flux_missing'] = np.nan  # This column will be filled
+
+# Fill missing predictor values (if any) with mean
+predictor_cols = ['soil_temp', 'soil_moisture', 'NDVI', 'air_temp', 'precipitation',
+                  'land_cover_2', 'land_cover_3', 'land_cover_4']
+data[predictor_cols] = data[predictor_cols].fillna(data[predictor_cols].mean())
+
+# Train RF model on non-missing GHG_flux values
+train_data = data.dropna(subset=['GHG_flux_missing', 'date'])
+X_train_rf = train_data[predictor_cols]
+y_train_rf = train_data['GHG_flux_missing']
+
+# Predict missing GHG_flux values
+rf_imputer = RandomForestRegressor(n_estimators=100, max_depth=10, random_state=42)
+rf_imputer.fit(X_train_rf, y_train_rf)
+
+predict_data = data[data['GHG_flux_missing'].isna()]
+X_predict_rf = predict_data[predictor_cols]
+predicted_flux = rf_imputer.predict(X_predict_rf)
+
+# Fill the predicted values back into the dataframe
+data.loc[X_predict_rf.index, 'GHG_flux_missing'] = predicted_flux
+
+# Calculate RMSE between true and predicted values only for imputed points
+true_values = data.loc[missing_indices_y, 'GHG_flux']
+predicted_values = data.loc[missing_indices_y, 'GHG_flux_missing']
+rmse = np.sqrt(mean_squared_error(true_values, predicted_values))
+
+# Plot full time series with RMSE error bars on imputed points
+plt.figure(figsize=(12, 5))
+plt.plot(data['date'], data['GHG_flux_missing'], label='Simulated GHG Flux (Gap-filled)', color='lightgray', alpha=0.9, zorder=1)
+plt.errorbar(data.loc[missing_indices_y, 'date'],
+             predicted_values,
+             yerr=rmse,
+             fmt='o',
+             color='orange',
+             ecolor='gray',
+             elinewidth=1.2,
+             capsize=2,
+             label=f'RF-Predicted Values ± RMSE',
+             zorder=2)
+plt.plot(data['date'], data['GHG_flux'], label='Simulated GHG Flux (With gaps)', color='blue', alpha=0.5, zorder=0)
+plt.xlabel("Date")
+plt.ylabel("GHG Flux")
+plt.title("GHG Flux Time Series with RF-Imputed Gaps and RMSE Error Bars")
+plt.legend()
+plt.tight_layout()
+plt.show()
+
+# Evaluate prediction accuracy on the dropped (previously missing) values
+mae = mean_absolute_error(true_values, predicted_values)
+rmse = np.sqrt(mean_squared_error(true_values, predicted_values))
+r2 = r2_score(true_values, predicted_values)
+
+# Print validation metrics
+print("Validation on Imputed Points Only:")
+print(f"Mean Absolute Error (MAE): {mae:.3f}")
+print(f"Root Mean Squared Error (RMSE): {rmse:.3f}")
+print(f"R² Score: {r2:.3f}")
 
 # Plot true vs predicted values for the imputed points with error bars and metric annotations
 plt.figure(figsize=(6, 6))
@@ -78,27 +154,6 @@ plt.title("Validation of Imputed GHG Flux Values")
 metrics_text = f"MAE = {mae:.2f}\nRMSE = {rmse:.2f}\nR² = {r2:.2f}"
 plt.annotate(metrics_text, xy=(0.05, 0.95), xycoords='axes fraction',
              fontsize=10, verticalalignment='top', bbox=dict(boxstyle="round", fc="w", ec="1"))
-plt.tight_layout()
-plt.show()
-
-# Plot full time series with RMSE error bars on imputed points
-plt.figure(figsize=(12, 5))
-plt.plot(data['date'], data['GHG_flux_missing'], label='Simulated GHG Flux (Gap-filled)', color='lightgray', alpha=0.9, zorder=1)
-plt.errorbar(data.loc[missing_indices_y, 'date'],
-             predicted_values,
-             yerr=rmse,
-             fmt='o',
-             color='orange',
-             ecolor='gray',
-             elinewidth=1.2,
-             capsize=2,
-             label=f'RF-Predicted Values ± RMSE',
-             zorder=2)
-plt.plot(data['date'], data['GHG_flux'], label='Simulated GHG Flux (With gaps)', color='blue', alpha=0.5, zorder=0)
-plt.xlabel("Date")
-plt.ylabel("GHG Flux")
-plt.title("GHG Flux Time Series with RF-Imputed Gaps and RMSE Error Bars")
-plt.legend()
 plt.tight_layout()
 plt.show()
 
@@ -140,62 +195,6 @@ print(f"Mean Absolute Error (MAE): {mae:.3f}")
 print(f"Root Mean Squared Error (RMSE): {rmse:.3f}")
 print(f"R² Score: {r2:.3f}")
 
-import shap
-
-# see https://shap.readthedocs.io/en/latest/example_notebooks/overviews/An%20introduction%20to%20explainable%20AI%20with%20Shapley%20values.html
-explainer = shap.TreeExplainer(rf_best)
-shap_values = explainer.shap_values(X_test)
-
-# Bar plot for global feature importance
-shap.summary_plot(shap_values, X_test, plot_type="bar")
-
-# examining nonlinear effects or interactions of one feature. Color = another feature that's most correlated (interaction).
-shap.dependence_plot('soil_temp', shap_values, X_test)
-
-# Force plot. See https://shap.readthedocs.io/en/latest/example_notebooks/tabular_examples/tree_based_models/Force%20Plot%20Colors.html
-
-shap.initjs()
-shap.force_plot(explainer.expected_value, shap_values, X_test)
-
-# Generate the interactive SHAP force plot for the full test set
-force_plot = shap.force_plot(explainer.expected_value, shap_values, X_test)
-
-# Save to HTML
-shap.save_html("shap_force_plot_full.html", force_plot)
-
-# Save force plot to standalone HTML file
-plot = shap.force_plot(explainer.expected_value, shap_values[0], X_test.iloc[0])
-
-shap.save_html("shap_force_plot_sample.html", plot)
-
-shap_heatmap = shap.Explanation(
-    values=shap_values,
-    base_values=explainer.expected_value,
-    data=X_test,
-    feature_names=X_test.columns
-)
-
-shap.plots.heatmap(shap_heatmap)
-
-i = 0  # or any index between 0 and len(X_test) - 1
-
-shap.waterfall_plot(shap.Explanation(
-    values=shap_values[i],
-    base_values=explainer.expected_value,
-    data=X_test.iloc[i]
-))
-
-# Wrap shap_values into an Explanation object
-shap_exp = shap.Explanation(
-    values=shap_values,
-    base_values=explainer.expected_value,
-    data=X_test,
-    feature_names=X_test.columns
-)
-
-# Now plot the beeswarm
-shap.plots.beeswarm(shap_exp)
-
 # Get predictions from all individual trees in the forest
 all_tree_preds = np.stack([tree.predict(X_test.values) for tree in rf_best.estimators_])
 
@@ -235,6 +234,80 @@ plt.figure(figsize=(12, 8))
 plot_tree(single_tree_from_rf, feature_names=X.columns, filled=True, rounded=True)
 plt.title("Single Decision Tree Extracted from Random Forest Model")
 plt.show()
+
+import shap
+
+# see https://shap.readthedocs.io/en/latest/example_notebooks/overviews/An%20introduction%20to%20explainable%20AI%20with%20Shapley%20values.html
+explainer = shap.TreeExplainer(rf_best)
+shap_values = explainer.shap_values(X_test)
+
+# Bar plot for global feature importance
+shap.summary_plot(shap_values, X_test, plot_type="bar")
+
+# examining nonlinear effects or interactions of one feature. Color = another feature that's most correlated (interaction).
+shap.dependence_plot('soil_temp', shap_values, X_test)
+
+# Force plot. See https://shap.readthedocs.io/en/latest/example_notebooks/tabular_examples/tree_based_models/Force%20Plot%20Colors.html
+
+shap.initjs()
+shap.force_plot(explainer.expected_value, shap_values, X_test)
+
+# Generate the interactive SHAP force plot for the full test set
+force_plot = shap.force_plot(explainer.expected_value, shap_values, X_test)
+# Save to HTML
+shap.save_html("shap_force_plot_full.html", force_plot)
+
+# Save force plot to standalone HTML file
+plot = shap.force_plot(explainer.expected_value, shap_values[0], X_test.iloc[0])
+shap.save_html("shap_force_plot_sample.html", plot)
+
+shap_heatmap = shap.Explanation(
+    values=shap_values,
+    base_values=explainer.expected_value,
+    data=X_test,
+    feature_names=X_test.columns
+)
+
+shap.plots.heatmap(shap_heatmap)
+
+i = 0  # or any index between 0 and len(X_test) - 1
+
+shap.waterfall_plot(shap.Explanation(
+    values=shap_values[i],
+    base_values=explainer.expected_value,
+    data=X_test.iloc[i]
+))
+
+# # To generate SHAP waterfall plots for all test samples
+# import os
+# # Create directory to save plots
+# os.makedirs("shap_waterfall_plots", exist_ok=True)
+
+# # Loop through all test instances
+# for i in range(len(X_test)):
+#     shap_instance = shap.Explanation(
+#         values=shap_values[i],
+#         base_values=explainer.expected_value,
+#         data=X_test.iloc[i],
+#         feature_names=X_test.columns
+#     )
+
+#     # Create and save plot
+#     plt.figure()
+#     shap.plots.waterfall(shap_instance, show=False)
+#     plt.savefig(f"shap_waterfall_plots/shap_waterfall_{i}.png", bbox_inches='tight')
+#     plt.close()/
+
+# Wrap shap_values into an Explanation object
+shap_exp = shap.Explanation(
+    values=shap_values,
+    base_values=explainer.expected_value,
+    data=X_test,
+    feature_names=X_test.columns
+)
+
+# Now plot the beeswarm
+shap.plots.beeswarm(shap_exp)
 
 from scipy.signal import correlate
 from scipy.stats import zscore
