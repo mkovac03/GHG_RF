@@ -76,7 +76,7 @@ pip install numpy pandas matplotlib scikit-learn shap
   - Lagged correlation matrix
   - Multi-panel time series of aligned variables
 
-### 🗒️ Applying Cross-Correlation to Real Data
+### 🔹 Applying Cross-Correlation to Real Data
 
 Now that the full cross-correlation workflow has been demonstrated on synthetic data, you can begin experimenting with your real-world environmental variables. This method allows you to:
 
