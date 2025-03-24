@@ -5,10 +5,9 @@ This repository simulates and models greenhouse gas (GHG) flux data using synthe
 ---
 
 ## 📁 Contents
-- `notebook.ipynb` or script file with the complete workflow
-- `shap_force_plot_sample.html` – SHAP force plot for one instance
-- `shap_force_plot_full.html` – SHAP force plots for all test samples
-- `ghg_flux_rf_analysis.md` – Project description and workflow
+- `GHG_fluxes_RF.ipynb` or script file with the complete workflow
+- `GHG_fluxes_RF.py` or script file with the complete workflow
+- `README.md` – Project description and workflow
 
 ---
 
