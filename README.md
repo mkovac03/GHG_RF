@@ -76,6 +76,16 @@ pip install numpy pandas matplotlib scikit-learn shap
   - Lagged correlation matrix
   - Multi-panel time series of aligned variables
 
+### 🗒️ Applying Cross-Correlation to Real Data
+
+Now that the full cross-correlation workflow has been demonstrated on synthetic data, you can begin experimenting with your real-world environmental variables. This method allows you to:
+
+- Quantify the temporal relationship between predictors (e.g., temperature, moisture, NDVI) and your target variable (e.g., GHG fluxes).
+- Identify the optimal lag at which each predictor is most strongly correlated with GHG flux.
+- Create a lag-optimized dataset, where each variable is realigned based on its most predictive temporal offset.
+
+This approach is especially valuable when modeling ecosystem processes that are influenced by delayed environmental responses (e.g., soil respiration reacting to prior rainfall or vegetation greenness with a lag).
+
 ---
 
 ## 📊 Example Visuals
