@@ -91,21 +91,21 @@ This approach is especially valuable when modeling ecosystem processes that are 
 ## 📊 Example Visuals
 
 ### GHG Flux Time Series
-![GHG Flux Time Series](ghg_fluxes.png)
+![GHG Flux Time Series](outputs/plots/environmental_variables.png)
 
 ### Random Forest Tree
-![Prediction Tree Plot](rf_tree.png)
+![Prediction Tree Plot](outputs/plots/random_forest_single_tree.png)
 
 ### SHAP Force Plots
-![SHAP Force Plot 1](shap_forceplot_1.png)
-![SHAP Force Plot 2](shap_forceplot_2.png)
+![SHAP Force Plot 1](outputs/html/shap_force_plot_full.html)
+![SHAP Force Plot 2](outputs/html/shap_force_plot_sample.html)
 
 
 ### SHAP Heatmap
-![SHAP Heatmap](shap_heatmap.png)
+![SHAP Heatmap](outputs/plots/shap_heatmap.png)
 
 ### SHAP Waterfall Plot
-![SHAP Waterfall Plot](shap_waterfall.png)
+![SHAP Waterfall Plot](outputs/shap_waterfall_plots/shap_waterfall_1.png)
 
 
 ---
