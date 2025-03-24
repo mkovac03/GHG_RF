@@ -6,6 +6,8 @@ from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
 import matplotlib.pyplot as plt
 np.random.seed(42)
 
+# Generate synthetic seasonal data for 1000 time steps (e.g., daily observations for ~3 years)
+days = np.arange(1000)
 # Create modified seasonality for each variable
 seasonality_base = np.sin(2 * np.pi * days / 365)
 seasonality_shifted = np.sin(2 * np.pi * (days + 30) / 365)  # 1-month shift
