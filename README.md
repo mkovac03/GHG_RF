@@ -97,8 +97,7 @@ This approach is especially valuable when modeling ecosystem processes that are 
 ![Prediction Tree Plot](outputs/plots/random_forest_single_tree.png)
 
 ### SHAP Force Plots
-![SHAP Force Plot 1](outputs/html/shap_force_plot_full.html)
-![SHAP Force Plot 2](outputs/html/shap_force_plot_sample.html)
+https://mkovac03.github.io//GHG_RF/outputs/html/shap_force_plot_full.html
 
 
 ### SHAP Heatmap
